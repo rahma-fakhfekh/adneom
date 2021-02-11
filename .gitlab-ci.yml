@@ -1,0 +1,55 @@
+deploy_master:
+  type: deploy
+  environment:
+    name: production
+    url: api.mobalpa.io
+  before_script:
+    - apt-get update -qq
+    - apt-get install -qq git
+    # Setup SSH deploy keys
+    - 'which ssh-agent || ( apt-get install -qq openssh-client )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - ssh mobalpa.io@mobalpa.io "whoami && cd ~/api.mobalpa.io && git clean  -d  -f . && git stash && git checkout master && git reset --hard && echo \"pull de la branche\" && git pull origin master &&  echo \"lancement composer \" &&  composer install &&   ./vendor/bin/drush cr &&  ./vendor/bin/drush entup && ./vendor/bin/drush cim -y &&  ./vendor/bin/drush cr && exit"
+  only:
+    - master
+deploy_develop:
+  type: deploy
+  environment:
+    name: staging
+    url: preprod.mobalpa.io
+  before_script:
+    - apt-get update -qq
+    - apt-get install -qq git
+    # Setup SSH deploy keys
+    - 'which ssh-agent || ( apt-get install -qq openssh-client )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - ssh mobalpa.io@mobalpa.io "whoami && cd ~/preprod.mobalpa.io && git clean  -d  -f . && git stash && git checkout develop && git reset --hard && echo \"pull de la branche\" && git pull origin develop &&  echo \"lancement composer \" &&  composer install &&   ./vendor/bin/drush cr  &&  ./vendor/bin/drush entup && ./vendor/bin/drush cim -y &&  ./vendor/bin/drush cr && exit"
+  only:
+    - develop
+
+deploy_beta:
+  type: deploy
+  environment:
+    name: beta
+    url: dev.mobalpa.io
+  before_script:
+    - apt-get update -qq
+    - apt-get install -qq git
+    # Setup SSH deploy keys
+    - 'which ssh-agent || ( apt-get install -qq openssh-client )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - ssh mobalpa.io@mobalpa.io "whoami && cd ~/dev.mobalpa.io && git clean  -d  -f . && git stash && git checkout beta && git reset --hard && echo \"pull de la branche\" && git pull origin beta &&  echo \"lancement composer \" &&  composer install &&   ./vendor/bin/drush cr  &&  ./vendor/bin/drush entup && ./vendor/bin/drush cim -y &&  ./vendor/bin/drush cr && exit"
+  only:
+    - beta
